@@ -17,6 +17,8 @@ public class ThemeParkRideController {
         this.themeParkRideRepository = themeParkRideRepository;
     }
 
+
+
     @GetMapping(value = "/ride", produces = MediaType.APPLICATION_JSON_VALUE)
     public Iterable<ThemeParkRide> getRides() {
         return themeParkRideRepository.findAll();
