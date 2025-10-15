@@ -3,7 +3,9 @@ version: "3.9"
 services:
   app:
     container_name: spring-boot-app
-    image: exelances/spring-boot-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       - TZ=Europe/Istanbul
