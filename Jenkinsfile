@@ -1,5 +1,9 @@
 pipeline {
-    agent any  // ← Docker agent yerine normal agent
+    agent any
+
+    tools {
+        jdk 'JAVA_17'  // ← Az önce kurduğunuz tool'un ismi
+    }
 
     environment {
         DOCKER_IMAGE = "exelances/spring-boot-app"
@@ -11,6 +15,16 @@ pipeline {
     }
 
     stages {
+        stage('Verify Java') {
+            steps {
+                echo '☕ Java versiyonu kontrol ediliyor...'
+                sh '''
+                    java -version
+                    echo "JAVA_HOME: $JAVA_HOME"
+                '''
+            }
+        }
+
         stage('Checkout Code') {
             steps {
                 echo '📥 Kod checkout ediliyor...'
@@ -81,6 +95,7 @@ pipeline {
     post {
         success {
             echo '✅ Pipeline başarıyla tamamlandı!'
+            echo "🎉 ${CONTAINER_NAME} başarıyla güncellendi!"
         }
         failure {
             echo '❌ Pipeline başarısız oldu!'
