@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'JDK_21' // JDK 21 kullanılıyor
+    }
+
     environment {
         DOCKER_IMAGE = "exelances/spring-boot-app"
         CONTAINER_NAME = "spring-boot-app"
@@ -25,44 +29,47 @@ pipeline {
             }
         }
 
-        // 🆕 Gradle cache'i temizle
-        stage('Clean Gradle Cache') {
+        stage('Deep Clean') {
             steps {
-                echo '🗑️ Gradle cache temizleniyor...'
+                echo '🗑️ Derin temizlik yapılıyor...'
                 script {
                     sh '''
-                        rm -rf /root/.gradle/caches/
+                        # Tüm Gradle cache'i temizle
+                        rm -rf /root/.gradle/
                         rm -rf .gradle/
-                        echo "Cache temizlendi!"
+                        rm -rf build/
+
+                        # Gradle wrapper'ı yeniden indirin
+                        chmod +x gradlew
+
+                        echo "✅ Derin temizlik tamamlandı!"
                     '''
                 }
             }
         }
 
-        // 🆕 Environment kontrolü
         stage('Verify Environment') {
             steps {
-                echo '🔍 Java versiyonu kontrol ediliyor...'
+                echo '🔍 Ortam kontrol ediliyor...'
                 script {
                     sh '''
                         echo "=== Java Version ==="
                         java -version 2>&1
                         echo ""
-                        echo "=== JAVA_HOME ==="
-                        echo $JAVA_HOME
+                        echo "=== Gradle Version ==="
+                        ./gradlew --version || echo "Gradle henüz hazır değil"
                     '''
                 }
             }
         }
 
-        // Test'leri geçici olarak atlayarak build
         stage('Build Application') {
             steps {
-                echo '🔨 Uygulama build ediliyor (testler atlanıyor)...'
+                echo '🔨 Uygulama build ediliyor...'
                 script {
                     sh '''
-                        chmod +x gradlew
-                        ./gradlew clean build -x test --no-daemon --refresh-dependencies
+                        # Gradle daemon'sız ve test'siz build
+                        ./gradlew clean build -x test --no-daemon --refresh-dependencies --info
                     '''
                 }
             }
@@ -107,10 +114,6 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'portainer-api-token', variable: 'PORTAINER_TOKEN')]) {
                         sh '''
-                            set -e
-
-                            echo "🔑 Portainer: ${PORTAINER_URL} | Stack: ${STACK_ID}"
-
                             JSON_PAYLOAD='{"PullImage": true, "RepositoryReferenceName": "'"${GIT_REF}"'"}'
 
                             HTTP_CODE=$(curl -k -sS -o /dev/null -w "%{http_code}" -X PUT \
@@ -119,14 +122,12 @@ pipeline {
                               -d "${JSON_PAYLOAD}" \
                               "${PORTAINER_URL}/api/stacks/${STACK_ID}/git/redeploy?endpointId=${ENDPOINT_ID}")
 
-                            echo "🌐 Portainer yanıtı: HTTP ${HTTP_CODE}"
-
                             if [ "$HTTP_CODE" != "204" ] && [ "$HTTP_CODE" != "200" ]; then
-                              echo "❌ Redeploy başarısız! (HTTP ${HTTP_CODE})"
+                              echo "❌ Deploy failed: HTTP ${HTTP_CODE}"
                               exit 1
                             fi
 
-                            echo "✅ Portainer redeploy başarıyla tetiklendi!"
+                            echo "✅ Deploy success!"
                         '''
                     }
                 }
@@ -137,7 +138,6 @@ pipeline {
     post {
         success {
             echo '✅ Pipeline başarıyla tamamlandı!'
-            echo "🎉 ${CONTAINER_NAME} başarıyla güncellendi!"
         }
         failure {
             echo '❌ Pipeline başarısız oldu!'
