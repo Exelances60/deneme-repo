@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JAVA_17'  // ← Az önce kurduğunuz tool'un ismi
+        jdk 'JAVA_17'
     }
 
     environment {
