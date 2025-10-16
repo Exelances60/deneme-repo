@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK_21' // JDK 21 kullanılıyor
-    }
-
     environment {
         DOCKER_IMAGE = "exelances/spring-boot-app"
         CONTAINER_NAME = "spring-boot-app"
@@ -69,7 +65,7 @@ pipeline {
                 script {
                     sh '''
                         # Gradle daemon'sız ve test'siz build
-                        ./gradlew clean build -x test --no-daemon --refresh-dependencies --info
+                        ./gradlew clean build -x test --no-daemon --refresh-dependencies
                     '''
                 }
             }
