@@ -2,13 +2,10 @@ plugins {
     id 'java'
     id 'io.spring.dependency-management' version "1.1.0"
     id 'org.springframework.boot' version '3.0.1'
-    id 'pl.allegro.tech.build.axion-release' version '1.14.3'
-    id 'com.palantir.docker' version '0.34.0'
-    id 'com.palantir.docker-run' version '0.34.0'
-    id 'jp.classmethod.aws.reboot.cloudformation' version '0.45'
 }
 
-version = scmVersion.version
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -32,46 +29,8 @@ test {
     useJUnitPlatform()
 }
 
-String dockerHubUsernameProperty = findProperty('dockerHubUsername') ?: 'tkgregory'
-String imageName = "${dockerHubUsernameProperty}/spring-boot-api-example:$version"
-
-docker {
-    name imageName
-    files "build/libs/${bootJar.archiveFileName.get()}"
-    buildArgs([JAR_FILE: bootJar.archiveFileName.get()])
-}
-
-dockerRun {
-    name project.name
-    image imageName
-    ports '8080:8080'
-    clean true
-}
-
-aws {
-    region = findProperty('region') ?: 'us-east-1'
-}
-
-cloudFormation {
-    stackName "$project.name-stack"
-    stackParams([
-            SubnetID: findProperty('subnetId') ?: '',
-            ServiceName: project.name,
-            ServiceVersion: project.version,
-            DockerHubUsername: dockerHubUsernameProperty
-    ])
-    templateFile project.file("ecs.yml")
-}
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-task('doStuff', type: Copy) {
-    println 'congiguring task'
-    doFirst {
-        println 'running task'
     }
 }
