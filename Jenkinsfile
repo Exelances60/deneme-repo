@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'eclipse-temurin:17-jdk'  // ← Java 17 container
-            args '-v /var/run/docker.sock:/var/run/docker.sock -u root'
-        }
-    }
+    agent any  // ← Docker agent yerine normal agent
 
     environment {
         DOCKER_IMAGE = "exelances/spring-boot-app"
